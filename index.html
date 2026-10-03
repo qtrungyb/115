@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Phân Ca 115 - Pro Max UI</title>
+    <style>
+        /* === TỔNG QUAN === */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', system-ui, sans-serif; background-color: #f4f7f9; margin: 0; padding: 20px; color: #1e293b; }
+        .control-panel { background: #fff; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); margin-bottom: 20px; }
+        
+        .header-panel { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 20px; margin-bottom: 25px; flex-wrap: wrap; gap: 15px;}
+        .header-panel h2 { margin: 0; color: #0f172a; font-size: 22px; display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: -0.5px;}
+        .header-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap;}
+        
+        .week-selector { display: flex; align-items: center; gap: 10px; background: #f8fafc; padding: 8px 16px; border-radius: 10px; border: 1px solid #e2e8f0; }
+        .week-selector label { font-weight: 600; color: #64748b; margin: 0; font-size: 14px;}
+        input[type="date"] { padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-weight: 600; font-family: inherit; font-size: 14px; cursor: pointer; outline: none; background: white; color: #0f172a; transition: 0.2s;}
+        input[type="date"]:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+
+        /* Nút bấm chung */
+        .btn { padding: 10px 20px; font-size: 14px; font-weight: 600; border-radius: 10px; border: none; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn svg { width: 18px; height: 18px; stroke-width: 2.5; }
+        .btn-primary { background: #2563eb; color: white; box-shadow: 0 4px 12px rgba(37,99,235,0.2); }
+        .btn-primary:hover { background: #1d4ed8; transform: translateY(-1px); box-shadow: 0 6px 15px rgba(37,99,235,0.3); }
+        .btn-success { background: #10b981; color: white; box-shadow: 0 4px 12px rgba(16,185,129,0.2); }
+        .btn-success:hover { background: #059669; transform: translateY(-1px); }
+        .btn-outline { background: white; border: 1px solid #cbd5e1; color: #334155; }
+        .btn-outline:hover { background: #f8fafc; border-color: #94a3b8; color: #0f172a; }
+        .btn-danger-outline { background: #fff5f5; border: 1px solid #fecaca; color: #ef4444; }
+        .btn-danger-outline:hover { background: #fee2e2; border-color: #fca5a5; }
+        .btn-apply { background: #f59e0b; color: white; padding: 8px 16px; font-size: 13px; border-radius: 8px; }
+        .btn-apply:hover { background: #d97706; }
+
+        /* === HỆ THỐNG POPUP === */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); z-index: 1000; display: none; opacity: 0; transition: opacity 0.3s ease; }
+        .modal-overlay.active { display: block; opacity: 1; }
+        .modal-overlay-z2 { z-index: 1005; background: rgba(15, 23, 42, 0.6); }
+
+        .modal { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95); background: #fff; border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3); z-index: 1001; width: 90%; max-width: 600px; max-height: 90vh; display: none; opacity: 0; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); flex-direction: column; overflow: hidden; border: 1px solid #e2e8f0; }
+        .modal.active { display: flex; opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        .modal-lg { max-width: 900px; } 
+        .modal-z2 { z-index: 1006; max-width: 450px; } 
+
+        .modal-header { padding: 20px 24px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #fff; }
+        .modal-header h3 { margin: 0; font-size: 18px; color: #0f172a; display: flex; align-items: center; gap: 10px; font-weight: 700;}
+        .modal-header h3 svg { width: 22px; height: 22px; color: #3b82f6; }
+        .btn-close { background: none; border: none; color: #94a3b8; cursor: pointer; padding: 6px; transition: 0.2s; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .btn-close:hover { background: #f1f5f9; color: #ef4444; }
+        .modal-body { padding: 24px; overflow-y: auto; background: #f8fafc;}
+        .modal-footer { padding: 16px 24px; border-top: 1px solid #f1f5f9; display: flex; justify-content: flex-end; gap: 12px; background: #fff; }
+
+        /* Danh sách nhân sự & Kíp */
+        .member-list { display: flex; flex-direction: column; gap: 12px; }
+        .member-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; transition: 0.2s; }
+        .member-item:hover { border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.04); transform: translateY(-1px); }
+        .member-info-group { display: flex; align-items: center; gap: 16px; }
+        .member-avatar { width: 44px; height: 44px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; flex-shrink: 0;}
+        .member-name { font-weight: 600; color: #1e293b; font-size: 15px; margin-bottom: 4px;}
+        .member-meta { font-size: 13px; color: #64748b; display: flex; gap: 12px; align-items: center;}
+        .member-actions { display: flex; gap: 8px; }
+        .btn-icon { width: 36px; height: 36px; border-radius: 8px; border: 1px solid #e2e8f0; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; color: #64748b; }
+        .btn-icon svg { width: 16px; height: 16px; stroke-width: 2; }
+        .btn-icon:hover { background: #f8fafc; border-color: #cbd5e1; color: #2563eb; }
+        .btn-icon.delete:hover { background: #fef2f2; border-color: #fecaca; color: #ef4444; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px; }
+        .form-group input { width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 10px; outline: none; font-family: inherit; font-size: 14px; box-sizing: border-box; transition: 0.2s; background: white;}
+        .form-group input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+        
+        .kip-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        .kip-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; display: flex; align-items: center; gap: 16px; transition: 0.2s;}
+        .kip-card:hover { border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+        .kip-card.error { border-color: #fca5a5; background: #fef2f2; }
+        .kip-badge { background: #eff6ff; color: #1d4ed8; width: 56px; height: 56px; display: flex; flex-direction: column; justify-content: center; align-items: center; border-radius: 12px; font-weight: 700; font-size: 16px; flex-shrink: 0;}
+        .kip-badge span { font-size: 10px; font-weight: 600; opacity: 0.7; text-transform: uppercase; margin-bottom: 2px;}
+        .kip-selectors { display: flex; flex: 1; flex-direction: column; gap: 10px; }
+        .kip-selectors select { width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 13px; outline: none; background: #f8fafc; font-weight: 500; color: #1e293b; cursor: pointer; transition: 0.2s; }
+        .kip-selectors select:hover { background: #fff; border-color: #94a3b8; }
+
+        /* ================= BẢNG CHÍNH ================= */
+        .input-table-wrapper { 
+            margin-bottom: 25px; 
+            border-radius: 12px; 
+            border: 1px solid #cbd5e1; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02); 
+            background: white; 
+            /* Xóa dòng overflow-x: auto; ở đây để giải phóng hiệu ứng Sticky Header */
+            overflow: visible; 
+        }
+        
+        .input-table { 
+            width: 100%; table-layout: fixed; border-collapse: separate; 
+            border-spacing: 0; font-size: 14px; min-width: 1000px; 
+        }
+        
+        .input-table th:first-child, .input-table td.name-col { width: 220px; }
+        .input-table th:not(:first-child), .input-table td.day-cell { width: calc((100% - 220px) / 7); }
+
+        .input-table th, .input-table td {
+            background-color: #ffffff; border-bottom: 1px solid #e2e8f0; 
+            border-right: 1px solid #e2e8f0; vertical-align: middle; 
+            transition: background-color 0.15s ease;
+        }
+
+        .input-table th { 
+            padding: 16px 10px; text-align: center; font-weight: 600; font-size: 13px; 
+            color: #334155; position: sticky; top: 0; z-index: 100; 
+            background-color: #ffffff; border-bottom: 2px solid #cbd5e1; transition: all 0.2s ease;
+        }
+        .input-table th span { color: #64748b; font-weight: 500; font-size: 12px; display: block; margin-top: 4px; }
+        
+        .input-table td.name-col { 
+            padding: 14px 16px; position: sticky; left: 0; z-index: 10;
+            background-color: #ffffff; border-right: 2px solid #cbd5e1; transition: background-color 0.2s ease;
+        }
+        
+        .input-table th:first-child {
+            z-index: 150 !important; left: 0; background-color: #ffffff !important; border-right: 2px solid #cbd5e1; 
+        }
+
+        .name-txt { font-size: 14px; font-weight: 600; color: #1e293b; margin-bottom: 4px;}
+        .input-table td.day-cell { padding: 6px; text-align: center; vertical-align: middle; }
+
+        /* MÀU CUỐI TUẦN */
+        .input-table td:nth-child(7), .input-table th:nth-child(7) { background-color: #f8fafc; }
+        .input-table td:nth-child(8), .input-table th:nth-child(8) { background-color: #fff1f2; }
+
+        /* HIỆU ỨNG GIÓNG HÀNG (CROSSHAIR) */
+        .input-table tbody tr:hover td,
+        .input-table td.col-highlight,
+        .input-table th.col-highlight { 
+            filter: brightness(0.96); transition: filter 0.15s ease;
+        }
+        .input-table th.col-highlight { border-bottom: 2px solid #3b82f6 !important; color: #2563eb; }
+        .input-table tbody tr:hover td.col-highlight { background-color: #eff6ff !important; filter: brightness(1) !important; }
+
+        .input-table tbody tr:hover td.col-highlight .toggle-btn:not(.active) {
+            background-color: #dbeafe !important; color: #2563eb; transform: scale(0.97); 
+        }
+        .input-table tbody tr:hover td.col-highlight .toggle-btn:not(.active)::after { content: '+ Thêm'; }
+
+        .input-table tbody tr:hover td.name-col {
+            background-color: #f8fafc !important; border-right: 2px solid #3b82f6 !important; filter: brightness(1) !important;
+        }
+        .input-table tbody tr:hover td.name-col .name-txt { color: #2563eb; transition: color 0.2s ease; }
+        
+        /* KHỐI LỊCH GOOGLE CALENDAR STYLE */
+        .toggle-btn { 
+            width: 100%; height: 42px; border: none !important; background-color: transparent !important; 
+            cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+            border-radius: 6px; display: flex; align-items: center; justify-content: flex-start; 
+            padding-left: 12px; outline: none; color: transparent; font-weight: 600; font-size: 13px;
+        }
+        .toggle-btn:not(.active):hover { background-color: rgba(59, 130, 246, 0.08) !important; color: #60a5fa; }
+        .toggle-btn:not(.active):hover::after { content: '+ Thêm'; }
+        
+        .toggle-btn.active { 
+            background-color: #fef2f2 !important; color: #ef4444; 
+            box-shadow: 0 1px 2px rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444 !important; border-radius: 4px; 
+        }
+        .toggle-btn.active::after { content: 'Trực khoa'; white-space: nowrap; }
+        .toggle-btn.active:hover { background-color: #fee2e2 !important; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2); }
+        .toggle-btn:active { transform: scale(0.95); transition: transform 0.05s; }
+
+        /* CẢI TIẾN: ĐỔ MÀU THẺ KHOA */
+        .dept-tag-pill {
+            display: inline-block; padding: 4px 10px; border-radius: 6px; 
+            font-size: 11px; font-weight: 600; border: none; box-shadow: 0 1px 2px rgba(0,0,0,0.04); 
+        }
+        .dept-kb { background-color: #d1fae5; color: #065f46; } 
+        .dept-ngoai { background-color: #fee2e2; color: #991b1b; } 
+        .dept-noi { background-color: #f3e8ff; color: #6b21a8; } 
+        .dept-nhi { background-color: #ffedd5; color: #9a3412; } 
+        .dept-ptgm { background-color: #e0f2fe; color: #075985; } 
+        .dept-default { background-color: #f1f5f9; color: #475569; }
+
+        /* CẢI TIẾN: THƯỚC ĐO KHỐI LƯỢNG (WORKLOAD BADGE) */
+        .workload-badge {
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: 700;
+            background: #f1f5f9; color: #64748b; transition: 0.3s;
+        }
+        .workload-badge.safe { background: #dcfce7; color: #166534; box-shadow: 0 0 0 1px #bbf7d0; } 
+        .workload-badge.warning { background: #fef3c7; color: #b45309; box-shadow: 0 0 0 1px #fde68a; } 
+        .workload-badge.danger { background: #fee2e2; color: #ef4444; box-shadow: 0 0 0 1px #fecaca; } 
+        .workload-badge.badge-115 { background: #dbeafe; color: #1d4ed8; box-shadow: 0 0 0 1px #bfdbfe; }
+
+        /* CẢI TIẾN: HÀNG NGHỈ PHÉP */
+        .row-disabled td:not(.name-col) {
+            background: repeating-linear-gradient(45deg, #f8fafc, #f8fafc 10px, #f1f5f9 10px, #f1f5f9 20px) !important;
+            pointer-events: none; filter: grayscale(1) opacity(0.5) !important; 
+        }
+        .row-disabled td.name-col { background-color: #f1f5f9 !important; opacity: 0.8; }
+        .name-wrapper { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+        .btn-lock {
+            background: transparent; border: 1px solid #cbd5e1; cursor: pointer; color: #94a3b8;
+            padding: 2px 4px; border-radius: 6px; transition: 0.2s; display: inline-flex; align-items: center; justify-content: center;
+        }
+        .btn-lock:hover { background: #e2e8f0; color: #334155; }
+        .btn-lock.locked { color: #ef4444; background: #fee2e2; border-color: #fca5a5; }
+
+        /* ĐỔ BÓNG ĐỘNG KHI CUỘN */
+        .input-table th.scrolled-shadow {
+            box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -2px rgba(15, 23, 42, 0.04);
+            border-bottom: 1px solid #cbd5e1 !important; transition: box-shadow 0.3s ease;
+        }
+        
+        /* THANH CÔNG CỤ NỔI BẬT Ở ĐÁY MÀN HÌNH */
+        .action-bar {
+            position: sticky; bottom: 20px; background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+            padding: 16px 24px; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            border: 1px solid rgba(226, 232, 240, 0.8); display: flex; gap: 16px; flex-wrap: wrap; 
+            z-index: 90; transition: all 0.3s ease; margin-top: 30px;
+        }
+
+        /* CẢI TIẾN: UI CHỌN NGƯỜI (SMART SELECT) */
+        .member-select {
+            appearance: none; -webkit-appearance: none; width: 100%; padding: 8px 28px 8px 12px;
+            font-size: 13px; font-weight: 600; font-family: inherit; border: 1px solid #cbd5e1; border-radius: 8px;
+            background-color: #ffffff; color: #1e293b; cursor: pointer; transition: all 0.2s ease;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat; background-position: right 8px center; background-size: 14px; 
+            text-overflow: ellipsis; white-space: nowrap; overflow: hidden; box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+        .member-select:hover { border-color: #94a3b8; background-color: #f8fafc; }
+        .member-select:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); background-color: #fff; }
+        
+        .member-select.is-empty {
+            background-color: #fffbeb; color: #d97706; border: 1px dashed #f59e0b;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23d97706' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        }
+        .member-select.is-empty:hover { background-color: #fef3c7; }
+        
+        .member-select.is-error {
+            background-color: #fef2f2; color: #ef4444; border: 1px solid #fca5a5;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23ef4444' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        }
+
+        /* KHUNG CẢNH BÁO */
+        .alert-box { display: none; background: #fffbeb; border: 1px solid #fde68a; padding: 20px; border-radius: 16px; margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03); }
+        .alert-title { color: #d97706; font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .alert-title svg { width: 20px; height: 20px; }
+        .conflict-list { color: #92400e; font-weight: 500; margin-bottom: 20px; font-size: 14px; background: #fef3c7; padding: 16px; border-radius: 12px; border: 1px dashed #fcd34d; line-height: 1.6;}
+        
+        .preview-box { background: white; border: 1px solid #cbd5e1; border-radius: 12px; padding: 16px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.03); }
+        .preview-box h4 { margin: 0 0 12px 0; color: #1e293b; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .preview-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: center; }
+        .preview-table th, .preview-table td { border: 1px solid #cbd5e1; padding: 8px; }
+        .preview-table th { background: #f1f5f9; color: #475569; font-weight: 600; }
+        .preview-table td b { color: #0f172a; display: block; }
+        .preview-table td span { font-size: 11px; color: #94a3b8; }
+        
+        .suggestion-card { background: white; border: 1px solid #e2e8f0; padding: 16px; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; transition: 0.2s; }
+        .suggestion-card:hover { border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+        .suggestion-text { font-size: 14px; color: #334155; line-height: 1.5; }
+        .badge-kip { background: #eff6ff; color: #1d4ed8; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; margin-right: 8px; }
+        .badge-member { background: #f0fdf4; color: #15803d; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; margin-right: 8px; }
+
+        /* PHẦN IN ẤN */
+        .printable-area { background: #fff; padding: 40px; box-shadow: 0 0 10px rgba(0,0,0,0.1); max-width: 900px; margin: 0 auto; display: none; color: #000; }
+        .header-title { text-align: center; font-family: 'Times New Roman', Times, serif; margin-bottom: 20px; }
+        .header-title h3 { font-size: 18px; margin: 0; font-weight: bold; }
+        .header-title h2 { font-size: 20px; margin: 5px 0 0 0; font-weight: bold; }
+        .header-title .date-range { font-size: 16px; font-style: italic; font-weight: normal; }
+        .report-table { width: 100%; border-collapse: collapse; font-family: 'Times New Roman', Times, serif; font-size: 17px; }
+        .report-table th, .report-table td { border: 1px solid #000; padding: 10px; vertical-align: middle; }
+        .report-table th { text-align: center; font-weight: bold; }
+        .report-table .col-thu { width: 50px; text-align: center; font-weight: bold; }
+        .report-table .col-ngay { width: 80px; text-align: center; font-weight: bold; }
+        .report-table .col-name { text-align: center; }
+        .member-info { display: inline-block; width: 45%; text-align: center; }
+        .member-info .name { font-weight: bold; }
+        .member-info .dept { font-weight: bold; font-style: italic; }
+        .member-info .phone { color: red; font-weight: bold; font-size: 18px; margin-top: 5px; }
+        .divider { display: inline-block; width: 5%; text-align: center; font-weight: bold; }
+        .notes-section { margin-top: 20px; font-family: 'Times New Roman', Times, serif; font-size: 16px; line-height: 1.5; }
+        .notes-section h4 { margin: 0 0 10px 0; font-style: italic; font-size: 17px; }
+        .notes-section p { margin: 5px 0; padding-left: 15px; }
+        .notes-section p.sub-note { padding-left: 40px; }
+        .signature-section { margin-top: 30px; text-align: right; font-family: 'Times New Roman', Times, serif; font-size: 17px; font-weight: bold; padding-right: 50px; }
+        .signature-section .title { margin-bottom: 80px; }
+        @media print { body { background: #fff; padding: 0; margin: 0; } .control-panel { display: none !important; } .printable-area { display: block; box-shadow: none; padding: 0; max-width: 100%; } }
+    </style>
+</head>
+<body>
+
+    <!-- THƯ VIỆN ICON SVG -->
+    <svg style="display:none;">
+        <symbol id="icon-users" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></symbol>
+        <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /></symbol>
+        <symbol id="icon-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" /></symbol>
+        <symbol id="icon-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></symbol>
+        <symbol id="icon-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></symbol>
+        <symbol id="icon-save" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></symbol>
+        <symbol id="icon-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></symbol>
+        <symbol id="icon-printer" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></symbol>
+        <symbol id="icon-x" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></symbol>
+        <symbol id="icon-alert" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></symbol>
+        <symbol id="icon-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></symbol>
+    </svg>
+
+    <!-- OVERLAYS -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal('modalMemberList'); closeModal('modalKipConfig')"></div>
+    <div class="modal-overlay modal-overlay-z2" id="modalOverlayZ2" onclick="closeModal('modalMemberForm')"></div>
+
+    <!-- 1. POPUP: QUẢN LÝ NHÂN SỰ -->
+    <div class="modal" id="modalMemberList">
+        <div class="modal-header">
+            <h3><svg><use href="#icon-users"></use></svg> Quản lý Nhân sự Đội 115</h3>
+            <button class="btn-close" onclick="closeModal('modalMemberList')"><svg style="width:20px;height:20px;"><use href="#icon-x"></use></svg></button>
+        </div>
+        <div class="modal-body">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <span style="color: #64748b; font-size: 14px;">Quản lý danh sách đội viên 115.</span>
+                <button class="btn btn-primary" onclick="openMemberForm()"><svg><use href="#icon-plus"></use></svg> Thêm thành viên</button>
+            </div>
+            <div class="member-list" id="memberListArea"></div>
+        </div>
+    </div>
+
+    <!-- 1.1. POPUP CON: THÊM / SỬA NHÂN SỰ -->
+    <div class="modal modal-z2" id="modalMemberForm">
+        <div class="modal-header">
+            <h3 id="memberFormTitle"><svg><use href="#icon-plus"></use></svg> Thêm nhân sự</h3>
+            <button class="btn-close" onclick="closeModal('modalMemberForm')"><svg style="width:20px;height:20px;"><use href="#icon-x"></use></svg></button>
+        </div>
+        <div class="modal-body" style="background: white;">
+            <input type="hidden" id="memEditId">
+            <div class="form-group">
+                <label>Họ và Tên <span style="color:red">*</span></label>
+                <input type="text" id="memName" placeholder="Ví dụ: Nguyễn Văn A">
+            </div>
+            <div class="form-group">
+                <label>Khoa trực <span style="color:red">*</span></label>
+                <input type="text" id="memDept" placeholder="Ví dụ: K.Ngoại">
+            </div>
+            <div class="form-group">
+                <label>Số điện thoại <span style="color:red">*</span></label>
+                <input type="text" id="memPhone" placeholder="Ví dụ: 0988.xxx.xxx">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('modalMemberForm')">Hủy bỏ</button>
+            <button class="btn btn-primary" onclick="saveMember()"><svg><use href="#icon-save"></use></svg> Lưu thông tin</button>
+        </div>
+    </div>
+
+    <!-- 2. POPUP: CẤU HÌNH KÍP GỐC -->
+    <div class="modal modal-lg" id="modalKipConfig">
+        <div class="modal-header">
+            <h3><svg><use href="#icon-settings"></use></svg> Cấu Hình Kíp Trực Gốc</h3>
+            <button class="btn-close" onclick="closeModal('modalKipConfig')"><svg style="width:20px;height:20px;"><use href="#icon-x"></use></svg></button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size: 14px; color: #475569; margin-top: 0; margin-bottom: 20px;">
+                Thiết lập 7 Kíp gốc ban đầu. Hệ thống sẽ tự động xoay vòng tiến lùi cho các tuần tiếp theo dựa trên cơ cấu này.
+            </p>
+            <div class="kip-grid" id="kipSettingsArea"></div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeModal('modalKipConfig')">Đóng</button>
+            <button class="btn btn-primary" onclick="saveKipSettings()"><svg><use href="#icon-save"></use></svg> Lưu Cấu Hình</button>
+        </div>
+    </div>
+
+    <!-- GIAO DIỆN CHÍNH -->
+    <div class="control-panel no-print">
+        <div class="header-panel">
+            <h2>Hệ Thống Phân Ca 115</h2>
+            <div class="header-actions">
+                <button class="btn btn-outline" onclick="openModal('modalMemberList')"><svg><use href="#icon-users"></use></svg> Nhân Sự</button>
+                <button class="btn btn-outline" onclick="openModal('modalKipConfig')"><svg><use href="#icon-settings"></use></svg> Kíp Gốc</button>
+                <div class="week-selector">
+                    <label>Tuần áp dụng:</label>
+                    <input type="date" id="startDate" onchange="handleDateChange()">
+                </div>
+            </div>
+        </div>
+
+        <div class="input-table-wrapper">
+            <table class="input-table" id="inputTable" onmouseleave="highlightCol(-1)">
+                <thead>
+                    <tr>
+                        <th style="text-align: left; padding-left: 20px;">THÔNG TIN NHÂN SỰ</th>
+                        <th>Thứ 2 <span id="d0"></span></th>
+                        <th>Thứ 3 <span id="d1"></span></th>
+                        <th>Thứ 4 <span id="d2"></span></th>
+                        <th>Thứ 5 <span id="d3"></span></th>
+                        <th>Thứ 6 <span id="d4"></span></th>
+                        <th>Thứ 7 <span id="d5"></span></th>
+                        <th>CN <span id="d6"></span></th>
+                    </tr>
+                </thead>
+                <tbody id="memberInputs"></tbody>
+            </table>
+        </div>
+
+        <!-- Khung Cảnh báo & Gợi ý Swap -->
+        <div class="alert-box" id="alertBox">
+            <div class="alert-title"><svg><use href="#icon-alert"></use></svg> Cảnh báo: Trùng lịch trực khoa!</div>
+            <div class="conflict-list" id="conflictList"></div>
+            
+            <div class="preview-box">
+                <h4>📅 Lịch dự kiến ban đầu</h4>
+                <div id="originalSchedulePreviewArea"></div>
+                <p style="margin: 10px 0 0 0; font-size: 13px; color: #ef4444; font-style: italic;">
+                    * Các kíp báo đỏ đang vướng lịch trực khoa hoặc thiếu người. Vui lòng bấm vào ô chọn để thay đổi.
+                </p>
+            </div>
+
+            <div id="groupKipSwap" style="margin-bottom: 24px;">
+                <h4 style="margin: 0 0 12px 0; color: #0f172a; font-size: 15px;">💡 PHƯƠNG ÁN 1: Đổi chéo nguyên Kíp (Khuyên dùng)</h4>
+                <div id="kipSuggestionsArea"></div>
+            </div>
+
+            <div id="groupMemberSwap">
+                <h4 style="margin: 0 0 12px 0; color: #0f172a; font-size: 15px;">💡 PHƯƠNG ÁN 2: Đổi chéo 1 thành viên (Tách kíp)</h4>
+                <div id="memberSuggestionsArea"></div>
+            </div>
+        </div>
+
+        <!-- Thanh Công Cụ Nổi (Action Bar) -->
+        <div class="action-bar no-print">
+            <button class="btn btn-primary" style="padding: 14px 28px; font-size: 16px;" onclick="generateAndCheckSchedule()">
+                <svg><use href="#icon-zap"></use></svg> Tính Toán Lịch Trực
+            </button>
+            <button class="btn btn-success" style="padding: 14px 28px; font-size: 16px;" onclick="window.print()">
+                <svg><use href="#icon-printer"></use></svg> In Báo Cáo / PDF
+            </button>
+            <button class="btn btn-danger-outline" style="padding: 14px 28px; font-size: 16px; margin-left: auto;" onclick="resetBusyStates()">
+                <svg><use href="#icon-refresh"></use></svg> Làm mới bảng
+            </button>
+        </div>
+    </div>
+
+    <!-- BẢNG IN -->
+    <div class="printable-area" id="printableArea">
+        <div class="header-title">
+            <h3>BỆNH VIỆN ĐA KHOA TRƯỜNG ĐỨC</h3>
+            <h2>BẢNG PHÂN TRỰC 115</h2>
+            <div class="date-range" id="reportDateRange"></div>
+        </div>
+        <table class="report-table">
+            <thead>
+                <tr>
+                    <th class="col-thu">THỨ</th>
+                    <th class="col-ngay">NGÀY</th>
+                    <th>HỌ VÀ TÊN</th>
+                </tr>
+            </thead>
+            <tbody id="reportBody"></tbody>
+        </table>
+        <div class="notes-section">
+            <h4>* Lưu ý:</h4>
+            <p>- Thời gian của 1 Kíp trực 115 được tính từ 7h sáng ngày hôm trước đến 7h sáng ngày hôm sau</p>
+            <p class="sub-note">+ Nếu vận chuyển trong giờ (Kể cả trong ngày T7 và CN) thì khoa có NB chuyển báo Đ/c Thanh điều động.</p>
+			<p class="sub-note">+ Nếu vận chuyển ngoài giờ BS trực trưởng kíp điều động.</p>
+            <p class="sub-note">+ Nếu trong ngày số NB chuyển viện đông thì sẽ điều động các kíp trực tiếp theo.</p>
+            <p>- Sau mỗi lần vận chuyển Điều dưỡng phải bàn giao thuốc, TTB (Có ghi sổ và ký nhận đầy đủ).</p>
+            <p>- Trước khi chuyển NB: Điều dưỡng vận chuyển phải kiểm tra, đánh giá tình trạng NB và chuẩn bị đầy đủ thuốc, TTB đảm bảo cho công tác xử trí, cấp cứu NB trong quá trình vận chuyển.</p>
+            <p>- Trên đường vận chuyển nếu NB phải dùng thuốc thì trước khi dùng thuốc CB vận chuyển phải công khai đầy đủ thuốc cho NB và người nhà NB</p>
+            <p>- Trong quá trình vận chuyển nếu NB có diễn biến cũng như khi bàn giao NB xong, CB vận chuyển phải gọi điện báo cáo tình hình với giám đốc Bệnh viện./.</p>
+        </div>
+        <div class="signature-section">
+            <div class="title">PGĐ – BV</div>
+            <div class="name">Bùi Thị Thanh</div>
+        </div>
+    </div>
+
+    <script>
+        const BASE_DATE_STR = '2026-09-28'; 
+        const thuNames = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN'];
+
+        const defaultMembers = [
+            { id: "m1", name: "Nguyễn Đăng Sơn", dept: "K.Khám Bệnh", phone: "0378.195.827" },
+            { id: "m2", name: "Vũ Xuân Hoàn", dept: "K.Ngoại", phone: "0375.262.077" },
+            { id: "m3", name: "Nguyễn Tùng Dương", dept: "K.Khám Bệnh", phone: "0963.226.436" },
+            { id: "m4", name: "Trịnh Minh Hoàng", dept: "K.Ngoại", phone: "0388.748.512" },
+            { id: "m5", name: "Hà Tuấn Anh", dept: "K.Khám Bệnh", phone: "0368.265.133" },
+            { id: "m6", name: "Lý A Hồng", dept: "K.Ngoại", phone: "0833.099.109" },
+            { id: "m7", name: "Tạ Hải Hà", dept: "K.Khám Bệnh", phone: "0917.388.426" },
+            { id: "m8", name: "Giàng A Chính", dept: "K.Ngoại", phone: "0355.548.658" },
+            { id: "m9", name: "Mễ Trung Thiên", dept: "K.PTGM", phone: "0855.566.128" },
+            { id: "m10", name: "Phạm Thế Hiển", dept: "K.Nội", phone: "0366.658.725" },
+            { id: "m11", name: "Mùa A Nủ", dept: "K.KB", phone: "0858.656.041" },
+            { id: "m12", name: "Phạm Quang Trung", dept: "K.Khám Bệnh", phone: "0977.795.715" },
+            { id: "m13", name: "Hờ A Thông", dept: "K.Nhi", phone: "0969.405.398" }
+        ];
+
+        const defaultBaseKips = [
+            { kId: 1, m1: 'm1', m2: 'm2' }, { kId: 2, m1: 'm3', m2: 'm4' }, { kId: 3, m1: 'm5', m2: 'm6' },
+            { kId: 4, m1: 'm7', m2: 'm8' }, { kId: 5, m1: 'm2', m2: 'm9' }, { kId: 6, m1: 'm10', m2: 'm11' }, { kId: 7, m1: 'm12', m2: 'm13' }
+        ];
+
+        let state = { startDate: "", members: [], baseKips: [], busyStates: {}, leaveStates: {} };
+        let currentTempSchedule = []; 
+
+        function getMemberInfo(id) {
+            let m = state.members.find(x => x.id === id);
+            return m ? m : { id: id, name: "--- TRỐNG ---", dept: "", phone: "" };
+        }
+
+        function getAvatar(name) {
+            let parts = name.trim().split(' ');
+            return parts.length > 0 ? parts[parts.length - 1].charAt(0).toUpperCase() : '?';
+        }
+
+        window.onload = function() {
+            let saved = localStorage.getItem('115_system_v15'); 
+            if(saved) state = JSON.parse(saved);
+            
+            if (!state.members || state.members.length === 0) state.members = JSON.parse(JSON.stringify(defaultMembers));
+            if (!state.baseKips || state.baseKips.length === 0) state.baseKips = JSON.parse(JSON.stringify(defaultBaseKips));
+            if (!state.leaveStates) state.leaveStates = {};
+            
+            if (!state.startDate) {
+                let today = new Date();
+                let nextMonday = new Date(today);
+                nextMonday.setDate(today.getDate() + ((1 + 7 - today.getDay()) % 7 || 7));
+                state.startDate = nextMonday.toISOString().split('T')[0];
+            }
+            
+            document.getElementById('startDate').value = state.startDate;
+            updateTableDates();
+            renderMemberList();
+            renderSettingsUI();
+            renderInputTable();
+        };
+
+        function saveData() { localStorage.setItem('115_system_v15', JSON.stringify(state)); }
+
+        function resetBusyStates() {
+            if(confirm("Bạn có chắc chắn muốn XÓA TOÀN BỘ các ô đã tick Trực Khoa trong tuần này?")) {
+                state.busyStates = {};
+                saveData();
+                renderInputTable();
+                document.getElementById('alertBox').style.display = 'none';
+                document.getElementById('printableArea').style.display = 'none';
+            }
+        }
+
+        function openModal(id) {
+            if(id === 'modalMemberForm') document.getElementById('modalOverlayZ2').classList.add('active'); 
+            else document.getElementById('modalOverlay').classList.add('active'); 
+            document.getElementById(id).classList.add('active');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+            if (id === 'modalMemberForm') document.getElementById('modalOverlayZ2').classList.remove('active'); 
+            else document.getElementById('modalOverlay').classList.remove('active'); 
+        }
+
+        function renderMemberList() {
+            let area = document.getElementById('memberListArea');
+            let html = '';
+            state.members.forEach((m) => {
+                html += `
+                <div class="member-item">
+                    <div class="member-info-group">
+                        <div class="member-avatar">${getAvatar(m.name)}</div>
+                        <div>
+                            <div class="member-name">${m.name}</div>
+                            <div class="member-meta">
+                                <span class="dept-tag">${m.dept}</span>
+                                <span>📞 ${m.phone}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="member-actions">
+                        <button class="btn-icon" title="Sửa" onclick="openMemberForm('${m.id}')"><svg><use href="#icon-edit"></use></svg></button>
+                        <button class="btn-icon delete" title="Xóa" onclick="deleteMember('${m.id}')"><svg><use href="#icon-trash"></use></svg></button>
+                    </div>
+                </div>`;
+            });
+            area.innerHTML = html;
+        }
+
+        function openMemberForm(id = null) {
+            if(id) {
+                let m = state.members.find(x => x.id === id);
+                document.getElementById('memEditId').value = m.id;
+                document.getElementById('memName').value = m.name;
+                document.getElementById('memDept').value = m.dept;
+                document.getElementById('memPhone').value = m.phone;
+                document.getElementById('memberFormTitle').innerHTML = `<svg><use href="#icon-edit"></use></svg> Cập nhật nhân sự`;
+            } else {
+                document.getElementById('memEditId').value = "";
+                document.getElementById('memName').value = "";
+                document.getElementById('memDept').value = "";
+                document.getElementById('memPhone').value = "";
+                document.getElementById('memberFormTitle').innerHTML = `<svg><use href="#icon-plus"></use></svg> Thêm nhân sự mới`;
+            }
+            openModal('modalMemberForm');
+        }
+
+        function saveMember() {
+            let editId = document.getElementById('memEditId').value;
+            let name = document.getElementById('memName').value.trim();
+            let dept = document.getElementById('memDept').value.trim();
+            let phone = document.getElementById('memPhone').value.trim();
+            if(!name || !dept || !phone) return alert("Vui lòng điền đủ thông tin!");
+
+            if(editId) {
+                let m = state.members.find(x => x.id === editId);
+                if(m) { m.name = name; m.dept = dept; m.phone = phone; }
+            } else {
+                state.members.push({ id: "m_" + Date.now(), name, dept, phone });
+            }
+            saveData(); closeModal('modalMemberForm'); renderMemberList(); renderSettingsUI(); renderInputTable(); 
+        }
+
+        function deleteMember(id) {
+            if(confirm("Xóa nhân sự này sẽ làm trống kíp trực tương ứng. Tiếp tục?")) {
+                state.members = state.members.filter(m => m.id !== id);
+                state.baseKips.forEach(k => { if(k.m1 === id) k.m1 = ""; if(k.m2 === id) k.m2 = ""; });
+                Object.keys(state.busyStates).forEach(key => { if (key.startsWith(id + "_")) delete state.busyStates[key]; });
+                saveData(); renderMemberList(); renderSettingsUI(); renderInputTable();
+            }
+        }
+
+        function renderSettingsUI() {
+            const area = document.getElementById('kipSettingsArea');
+            let html = '';
+            let optionsHtml = '<option value="">-- Chọn nhân sự --</option>';
+            state.members.forEach(m => { optionsHtml += `<option value="${m.id}">${m.name} (${m.dept})</option>`; });
+
+            state.baseKips.forEach((k, idx) => {
+                let cardClass = (!k.m1 || !k.m2) ? "kip-card error" : "kip-card";
+                html += `
+                <div class="${cardClass}">
+                    <div class="kip-badge"><span>KÍP</span>${idx+1}</div>
+                    <div class="kip-selectors">
+                        <select id="cfg_m1_${idx}">${optionsHtml}</select>
+                        <select id="cfg_m2_${idx}">${optionsHtml}</select>
+                    </div>
+                </div>`;
+            });
+            area.innerHTML = html;
+
+            state.baseKips.forEach((k, idx) => {
+                document.getElementById(`cfg_m1_${idx}`).value = k.m1 || "";
+                document.getElementById(`cfg_m2_${idx}`).value = k.m2 || "";
+            });
+        }
+
+        function saveKipSettings() {
+            for(let i=0; i<7; i++) {
+                let v1 = document.getElementById(`cfg_m1_${i}`).value;
+                let v2 = document.getElementById(`cfg_m2_${i}`).value;
+                if(!v1 || !v2) return alert(`Kíp ${i+1} thiếu nhân sự. Vui lòng gán đủ!`);
+                state.baseKips[i].m1 = v1; state.baseKips[i].m2 = v2;
+            }
+            saveData(); closeModal('modalKipConfig'); renderSettingsUI();
+        }
+
+        function handleDateChange() {
+            let inputDate = new Date(document.getElementById('startDate').value);
+            let day = inputDate.getDay();
+            let diff = inputDate.getDate() - day + (day === 0 ? -6 : 1);
+            state.startDate = new Date(inputDate.setDate(diff)).toISOString().split('T')[0];
+            document.getElementById('startDate').value = state.startDate;
+            state.busyStates = {}; saveData(); updateTableDates(); renderInputTable();
+        }
+
+        function updateTableDates() {
+            const startDate = new Date(state.startDate);
+            const endDate = new Date(startDate); endDate.setDate(startDate.getDate() + 6);
+            
+            const today = new Date();
+            today.setHours(0,0,0,0); 
+
+            const fmt = (d) => `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}`;
+            document.getElementById('reportDateRange').innerText = `(Từ ${fmt(startDate)} - ${fmt(endDate)}/${startDate.getFullYear()})`;
+            
+            for(let i=0; i<7; i++) {
+                let d = new Date(startDate); 
+                d.setDate(startDate.getDate() + i);
+                d.setHours(0,0,0,0);
+                
+                let dateSpan = document.getElementById(`d${i}`);
+                let thElement = dateSpan.parentElement; 
+                
+                dateSpan.innerText = fmt(d);
+                
+                if (d.getTime() === today.getTime()) {
+                    thElement.style.backgroundColor = '#eff6ff';      
+                    thElement.style.borderBottom = '3px solid #3b82f6'; 
+                    thElement.style.color = '#1d4ed8';                
+                    dateSpan.style.color = '#1d4ed8';
+                    dateSpan.style.fontWeight = '700';                
+                    dateSpan.innerText += ' (Hôm nay)';
+                } else {
+                    thElement.style.backgroundColor = ''; 
+                    thElement.style.borderBottom = '2px solid #cbd5e1';
+                    thElement.style.color = '#334155';
+                    dateSpan.style.color = '#64748b';
+                    dateSpan.style.fontWeight = '500';
+                }
+            }
+        }
+
+        function highlightCol(colIdx) {
+            document.querySelectorAll('.col-highlight').forEach(el => el.classList.remove('col-highlight'));
+            if (colIdx === -1) return; 
+            
+            let ths = document.querySelectorAll('#inputTable th');
+            if(ths[colIdx + 1]) ths[colIdx + 1].classList.add('col-highlight');
+            
+            let trs = document.querySelectorAll('#inputTable tbody tr');
+            trs.forEach(tr => {
+                let cell = tr.children[colIdx + 1];
+                if(cell) cell.classList.add('col-highlight');
+            });
+        }
+
+        function getDeptClass(dept) {
+            if(!dept) return 'dept-default';
+            let d = dept.toLowerCase();
+            if(d.includes('khám') || d.includes('kb')) return 'dept-kb';
+            if(d.includes('ngoại')) return 'dept-ngoai';
+            if(d.includes('nội')) return 'dept-noi';
+            if(d.includes('nhi')) return 'dept-nhi';
+            if(d.includes('ptgm') || d.includes('phẫu thuật') || d.includes('gây mê')) return 'dept-ptgm';
+            return 'dept-default';
+        }
+
+        function toggleLeave(mId) {
+            let key = `${mId}_${state.startDate}`; 
+            state.leaveStates[key] = !state.leaveStates[key];
+            if(state.leaveStates[key]) {
+                for(let i=0; i<7; i++) delete state.busyStates[`${mId}_${i}`];
+            }
+            saveData(); renderInputTable();
+        }
+
+        function renderInputTable() {
+            if(!state.leaveStates) state.leaveStates = {}; 
+            const tbody = document.getElementById('memberInputs');
+            let html = '';
+            
+            state.members.forEach((m, idx) => {
+                let leaveKey = `${m.id}_${state.startDate}`;
+                let isLocked = state.leaveStates[leaveKey];
+                let rowClass = isLocked ? "row-disabled" : "";
+                
+                let busyCount = 0;
+                for(let i=0; i<7; i++) { if(state.busyStates[`${m.id}_${i}`]) busyCount++; }
+                
+                let badgeClass = '';
+                if(busyCount >= 1 && busyCount <= 2) badgeClass = 'safe';
+                else if(busyCount === 3) badgeClass = 'warning';
+                else if(busyCount > 3) badgeClass = 'danger';
+                
+                let badgeHtml = busyCount > 0 ? `<div class="workload-badge ${badgeClass}" title="Đã xếp ${busyCount} ngày trực khoa">Khoa: ${busyCount}</div>` : '';
+                
+                let shift115Count = 0;
+                if (currentTempSchedule && currentTempSchedule.length === 7) {
+                    for(let i=0; i<7; i++) {
+                        if (currentTempSchedule[i].m1 === m.id) shift115Count++;
+                        if (currentTempSchedule[i].m2 === m.id) shift115Count++;
+                    }
+                }
+                let badge115Html = shift115Count > 0 ? `<div class="workload-badge badge-115" title="Được phân ${shift115Count} ca 115 tuần này">115: ${shift115Count}</div>` : '';
+                
+                let lockIcon = isLocked 
+                    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0110 0v4"></path></svg>` 
+                    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 019.9-1"></path></svg>`;
+                let btnLockClass = isLocked ? "btn-lock locked" : "btn-lock";
+
+                html += `<tr class="${rowClass}">
+                    <td class="name-col" onmouseenter="highlightCol(-1)">
+                        <div class="name-wrapper">
+                            <div class="name-txt" style="margin-bottom:0;">${idx+1}. ${m.name}</div>
+                            <button class="${btnLockClass}" title="Nghỉ phép / Khóa lịch" onclick="toggleLeave('${m.id}')">${lockIcon}</button>
+                        </div>
+                        <div style="display:flex; align-items:center; gap: 4px; flex-wrap: wrap;">
+                            <div class="dept-tag-pill ${getDeptClass(m.dept)}">${m.dept}</div>
+                            ${badgeHtml}
+                            ${badge115Html}
+                        </div>
+                    </td>`;
+                    
+                for(let i=0; i<7; i++) {
+                    let key = `${m.id}_${i}`;
+                    let btnClass = state.busyStates[key] ? "toggle-btn active" : "toggle-btn";
+                    let disabledAttr = isLocked ? 'disabled' : '';
+                    html += `<td class="day-cell" onmouseenter="highlightCol(${i})">
+                        <button class="${btnClass}" onclick="toggleBusy('${m.id}', ${i})" ${disabledAttr}></button>
+                    </td>`;
+                }
+                html += `</tr>`;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function toggleBusy(mId, dayIdx) {
+            let key = `${mId}_${dayIdx}`;
+            state.busyStates[key] = !state.busyStates[key];
+            saveData(); renderInputTable();
+        }
+
+        function checkBaseKipIntegrity() {
+            for(let i=0; i<7; i++) { if(!state.baseKips[i].m1 || !state.baseKips[i].m2) return false; }
+            return true;
+        }
+
+        function generateBaseRotation() {
+            let baseDate = new Date(BASE_DATE_STR);
+            let targetDate = new Date(state.startDate);
+            let weeksDiff = Math.floor((targetDate.getTime() - baseDate.getTime()) / (1000 * 3600 * 24 * 7));
+            let shiftAmount = ((weeksDiff % 7) + 7) % 7; 
+            let shifted = JSON.parse(JSON.stringify(state.baseKips));
+            for (let i = 0; i < shiftAmount; i++) shifted.push(shifted.shift()); 
+            return shifted;
+        }
+
+        function generateAndCheckSchedule() {
+            if(!checkBaseKipIntegrity()) {
+                document.getElementById('alertBox').style.display = 'block';
+                document.querySelector('.alert-title').innerHTML = `<svg><use href="#icon-alert"></use></svg> Lỗi Cấu hình Kíp!`;
+                document.getElementById('conflictList').innerHTML = "<b>Cấu hình Kíp gốc đang bị trống</b>. Vui lòng nhấn nút [Cấu Hình Kíp Gốc] để gán đủ nhân sự.";
+                document.getElementById('groupKipSwap').style.display = 'none';
+                document.getElementById('groupMemberSwap').style.display = 'none';
+                document.querySelector('.preview-box').style.display = 'none';
+                return;
+            }
+
+            let rawSchedule = generateBaseRotation();
+            currentTempSchedule = [];
+            
+            for(let i=0; i<7; i++) {
+                let kip = { ...rawSchedule[i] }; 
+                if (state.leaveStates[`${kip.m1}_${state.startDate}`]) kip.m1 = "";
+                if (state.leaveStates[`${kip.m2}_${state.startDate}`]) kip.m2 = "";
+                currentTempSchedule.push(kip);
+            }
+            checkAndRenderConflicts();
+        }
+
+        function getAvailableMembersOptions(dayIdx, currentMemberId, otherMemberId) {
+            let options = '<option value="">-- Chọn --</option>'; 
+            
+            let shiftCounts = {};
+            state.members.forEach(m => shiftCounts[m.id] = 0);
+            for(let i=0; i<7; i++) {
+                if(currentTempSchedule[i]) {
+                    if(currentTempSchedule[i].m1) shiftCounts[currentTempSchedule[i].m1]++;
+                    if(currentTempSchedule[i].m2) shiftCounts[currentTempSchedule[i].m2]++;
+                }
+            }
+
+            state.members.forEach(m => {
+                if (m.id === otherMemberId && m.id !== "") return; 
+
+                let isBusy = state.busyStates[`${m.id}_${dayIdx}`];
+                let isLeave = state.leaveStates[`${m.id}_${state.startDate}`];
+                
+                if ((!isBusy && !isLeave) || m.id === currentMemberId) {
+                    let selected = (m.id === currentMemberId) ? 'selected' : '';
+                    let c = shiftCounts[m.id];
+                    let countText = c > 0 ? ` (Đang có ${c} ca 115)` : ` (Rảnh)`;
+                    options += `<option value="${m.id}" ${selected}>${m.name} - ${m.dept}${countText}</option>`;
+                }
+            });
+            return options;
+        }
+
+        function renderPreviewSchedule(schedule, conflicts) {
+            let html = `<table class="preview-table">
+                <thead>
+                    <tr>
+                        <th>Thứ 2</th><th>Thứ 3</th><th>Thứ 4</th><th>Thứ 5</th><th>Thứ 6</th><th>Thứ 7</th><th>CN</th>
+                    </tr>
+                </thead>
+                <tbody><tr>`;
+
+            for(let i=0; i<7; i++) {
+                let kip = schedule[i];
+                let m1Busy = kip.m1 ? state.busyStates[`${kip.m1}_${i}`] : false;
+                let m2Busy = kip.m2 ? state.busyStates[`${kip.m2}_${i}`] : false;
+                let isEmptyM1 = !kip.m1;
+                let isEmptyM2 = !kip.m2;
+                
+                let hasError = m1Busy || m2Busy || isEmptyM1 || isEmptyM2;
+                let cellBg = hasError ? '#fef2f2' : '#ffffff';
+                let cellBorder = hasError ? '2px solid #ef4444' : '1px solid #cbd5e1';
+
+                html += `<td style="background: ${cellBg}; border: ${cellBorder}; vertical-align: top; padding: 10px 8px;">`;
+                
+                let s1Class = isEmptyM1 ? "member-select is-empty" : (m1Busy ? "member-select is-error" : "member-select");
+                html += `<select class="${s1Class}" onchange="applyQuickFill(${i}, 1, this.value)">
+                            ${getAvailableMembersOptions(i, kip.m1, kip.m2)}
+                         </select>`;
+                         
+                html += `<div style="height: 8px;"></div>`; 
+
+                let s2Class = isEmptyM2 ? "member-select is-empty" : (m2Busy ? "member-select is-error" : "member-select");
+                html += `<select class="${s2Class}" onchange="applyQuickFill(${i}, 2, this.value)">
+                            ${getAvailableMembersOptions(i, kip.m2, kip.m1)}
+                         </select>`;
+                html += `</td>`;
+            }
+            html += `</tr></tbody></table>`;
+            document.getElementById('originalSchedulePreviewArea').innerHTML = html;
+        }
+
+        function applyQuickFill(dayIdx, pos, newMemberId) {
+            if(!newMemberId) return;
+            if(pos === 1) currentTempSchedule[dayIdx].m1 = newMemberId;
+            else currentTempSchedule[dayIdx].m2 = newMemberId;
+            checkAndRenderConflicts(); 
+        }
+
+        function checkAndRenderConflicts() {
+            document.getElementById('alertBox').style.display = 'none';
+            renderInputTable(); 
+
+            let conflicts = [];
+            let emptySlots = 0;
+
+            for(let dayIdx = 0; dayIdx < 7; dayIdx++) {
+                let kip = currentTempSchedule[dayIdx];
+                if(!kip.m1) emptySlots++;
+                if(!kip.m2) emptySlots++;
+
+                let m1Busy = kip.m1 ? state.busyStates[`${kip.m1}_${dayIdx}`] : false;
+                let m2Busy = kip.m2 ? state.busyStates[`${kip.m2}_${dayIdx}`] : false;
+                
+                if (m1Busy || m2Busy) {
+                    let busyIds = [];
+                    if(m1Busy) busyIds.push(kip.m1);
+                    if(m2Busy) busyIds.push(kip.m2);
+                    conflicts.push({ dayIdx: dayIdx, kip: kip, busyIds: busyIds });
+                }
+            }
+
+            if(conflicts.length > 0 || emptySlots > 0) {
+                document.getElementById('alertBox').style.display = 'block';
+                document.querySelector('.preview-box').style.display = 'block';
+                
+                let alertTitle = '';
+                if(conflicts.length > 0 && emptySlots > 0) alertTitle = `<svg><use href="#icon-alert"></use></svg> Lỗi: Trùng lịch khoa & Thiếu người trực!`;
+                else if(conflicts.length > 0) alertTitle = `<svg><use href="#icon-alert"></use></svg> Cảnh báo: Trùng lịch trực khoa!`;
+                else alertTitle = `<svg><use href="#icon-alert"></use></svg> Cảnh báo: Thiếu người trực do nghỉ phép!`;
+                document.querySelector('.alert-title').innerHTML = alertTitle;
+
+                renderPreviewSchedule(currentTempSchedule, conflicts);
+
+                let conflictHtml = '';
+                if(emptySlots > 0) {
+                    conflictHtml += `<div style="color:#b45309; font-weight:bold; margin-bottom:8px;">⚠️ Có ${emptySlots} vị trí đang bị trống. Vui lòng chọn người thay thế trên sa bàn.</div>`;
+                }
+
+                conflicts.forEach(c => {
+                    let n1 = c.kip.m1 ? getMemberInfo(c.kip.m1).name : "TRỐNG"; 
+                    let n2 = c.kip.m2 ? getMemberInfo(c.kip.m2).name : "TRỐNG";
+                    let reasons = c.busyIds.map(id => `<b>${getMemberInfo(id).name}</b>`).join(" và ");
+                    conflictHtml += `• <b>${thuNames[c.dayIdx]}</b>: Kíp [${n1} - ${n2}] có ${reasons} đang bị dính Lịch Trực Khoa.<br>`;
+                });
+                document.getElementById('conflictList').innerHTML = conflictHtml;
+                
+                if(conflicts.length > 0) {
+                    generateSmartSuggestions(conflicts);
+                } else {
+                    document.getElementById('groupKipSwap').style.display = 'none';
+                    document.getElementById('groupMemberSwap').style.display = 'none';
+                }
+
+                document.getElementById('printableArea').style.display = 'none';
+                document.getElementById('alertBox').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                renderPrintable(); 
+            }
+        }
+
+        function generateSmartSuggestions(conflicts) {
+            let kipArea = document.getElementById('kipSuggestionsArea');
+            let memberArea = document.getElementById('memberSuggestionsArea');
+            kipArea.innerHTML = ''; memberArea.innerHTML = '';
+            
+            document.getElementById('groupKipSwap').style.display = 'block';
+            document.getElementById('groupMemberSwap').style.display = 'block';
+
+            let c = conflicts[0]; 
+            let cDay = c.dayIdx;
+            let cKip = c.kip;
+            let foundKipSwap = false, foundMemberSwap = false;
+
+            for(let checkDay = 0; checkDay < 7; checkDay++) {
+                if (checkDay === cDay) continue;
+                let checkKip = currentTempSchedule[checkDay];
+                
+                let checkKipFreeOnCDay = !state.busyStates[`${checkKip.m1}_${cDay}`] && !state.busyStates[`${checkKip.m2}_${cDay}`];
+                let cKipFreeOnCheckDay = !state.busyStates[`${cKip.m1}_${checkDay}`] && !state.busyStates[`${cKip.m2}_${checkDay}`];
+
+                if (checkKipFreeOnCDay && cKipFreeOnCheckDay) {
+                    foundKipSwap = true;
+                    kipArea.innerHTML += `
+                        <div class="suggestion-card">
+                            <div class="suggestion-text"><span class="badge-kip">Đổi Nguyên Kíp</span> Đưa Kíp <b>[${getMemberInfo(cKip.m1).name}]</b> sang <b>${thuNames[checkDay]}</b>. Kéo Kíp <b>[${getMemberInfo(checkKip.m1).name}]</b> về <b>${thuNames[cDay]}</b>.</div>
+                            <button class="btn btn-apply" onclick="applyKipSwap(${cDay}, ${checkDay})">Áp dụng</button>
+                        </div>`;
+                }
+
+                c.busyIds.forEach(busyId => {
+                    let busyName = getMemberInfo(busyId).name;
+                    
+                    let checkM1 = checkKip.m1;
+                    if(!state.busyStates[`${checkM1}_${cDay}`] && !state.busyStates[`${busyId}_${checkDay}`]) {
+                        foundMemberSwap = true;
+                        memberArea.innerHTML += `
+                        <div class="suggestion-card">
+                            <div class="suggestion-text"><span class="badge-member">Đổi 1 Người</span> Đưa <b>${busyName}</b> sang <b>${thuNames[checkDay]}</b>. Kéo <b>${getMemberInfo(checkM1).name}</b> về <b>${thuNames[cDay]}</b>.</div>
+                            <button class="btn btn-apply" onclick="applyMemberSwap(${cDay}, '${busyId}', ${checkDay}, '${checkM1}', 1)">Áp dụng</button>
+                        </div>`;
+                    }
+                    
+                    let checkM2 = checkKip.m2;
+                    if(!state.busyStates[`${checkM2}_${cDay}`] && !state.busyStates[`${busyId}_${checkDay}`]) {
+                        foundMemberSwap = true;
+                        memberArea.innerHTML += `
+                        <div class="suggestion-card">
+                            <div class="suggestion-text"><span class="badge-member">Đổi 1 Người</span> Đưa <b>${busyName}</b> sang <b>${thuNames[checkDay]}</b>. Kéo <b>${getMemberInfo(checkM2).name}</b> về <b>${thuNames[cDay]}</b>.</div>
+                            <button class="btn btn-apply" onclick="applyMemberSwap(${cDay}, '${busyId}', ${checkDay}, '${checkM2}', 2)">Áp dụng</button>
+                        </div>`;
+                    }
+                });
+            }
+
+            if(!foundKipSwap) kipArea.innerHTML = `<div style="color:#64748b; font-style:italic;">Không có cặp Kíp nào rảnh để đổi chéo.</div>`;
+            if(!foundMemberSwap) memberArea.innerHTML = `<div style="color:#64748b; font-style:italic;">Không có nhân sự nào phù hợp để tách kíp đổi chéo.</div>`;
+        }
+
+        function applyKipSwap(d1, d2) {
+            let temp = currentTempSchedule[d1];
+            currentTempSchedule[d1] = currentTempSchedule[d2];
+            currentTempSchedule[d2] = temp;
+            checkAndRenderConflicts();
+        }
+
+        function applyMemberSwap(cDay, busyId, checkDay, checkMemberId, checkMemberPos) {
+            let cKip = currentTempSchedule[cDay];
+            let busyPos = (cKip.m1 === busyId) ? 1 : 2;
+
+            if(busyPos === 1) currentTempSchedule[cDay].m1 = checkMemberId;
+            else currentTempSchedule[cDay].m2 = checkMemberId;
+
+            if(checkMemberPos === 1) currentTempSchedule[checkDay].m1 = busyId;
+            else currentTempSchedule[checkDay].m2 = busyId;
+
+            checkAndRenderConflicts();
+        }
+
+        function renderPrintable() {
+            const tbody = document.getElementById('reportBody');
+            let html = '';
+            let startDate = new Date(state.startDate);
+
+            for(let i=0; i<7; i++) {
+                let d = new Date(startDate);
+                d.setDate(startDate.getDate() + i);
+                let dateStr = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth()+1).toString().padStart(2, '0')}`;
+                
+                let thuLabel = i === 6 ? '<span style="color:red; font-weight:bold;">CN</span>' : (i + 2);
+                let dateLabel = i === 6 ? `<span style="color:red; font-weight:bold;">${dateStr}</span>` : dateStr;
+
+                let kip = currentTempSchedule[i];
+                let m1Info = getMemberInfo(kip.m1);
+                let m2Info = getMemberInfo(kip.m2);
+
+                html += `
+                <tr>
+                    <td class="col-thu">${thuLabel}</td>
+                    <td class="col-ngay">${dateLabel}</td>
+                    <td class="col-name">
+                        <div class="member-info">
+                            <span class="name">${m1Info.name}</span> <span class="dept">(${m1Info.dept})</span><br>
+                            <div class="phone">${m1Info.phone}</div>
+                        </div>
+                        <div class="divider">-</div>
+                        <div class="member-info">
+                            <span class="name">${m2Info.name}</span> <span class="dept">(${m2Info.dept})</span><br>
+                            <div class="phone">${m2Info.phone}</div>
+                        </div>
+                    </td>
+                </tr>`;
+            }
+            tbody.innerHTML = html;
+            document.getElementById('printableArea').style.display = 'block';
+            setTimeout(() => document.getElementById('printableArea').scrollIntoView({ behavior: 'smooth' }), 100);
+        }
+
+        window.addEventListener('scroll', function() {
+            const table = document.getElementById('inputTable');
+            const ths = document.querySelectorAll('.input-table th');
+            if(!table) return;
+            if (table.getBoundingClientRect().top <= 0) {
+                ths.forEach(th => th.classList.add('scrolled-shadow'));
+            } else {
+                ths.forEach(th => th.classList.remove('scrolled-shadow'));
+            }
+        });
+    </script>
+</body>
+</html>
